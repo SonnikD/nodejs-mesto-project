@@ -4,18 +4,17 @@ import { ERROR_CODES } from '../utils/constants';
 import { ITokenPayload } from '../utils/types';
 
 export default (req: Request, res: Response, next: NextFunction) => {
-  const { authorization } = req.headers;
+  const token = req.cookies.jwt;
+  const { JWT_SECRET } = process.env;
 
-  if (!authorization || !authorization.startsWith('Bearer ')) {
+  if (!token) {
     return res.status(ERROR_CODES.UNAUTHORIZED).send({ message: 'Необходима авторизация' });
   }
-
-  const token = authorization.replace('Bearer ', '');
 
   let payload;
 
   try {
-    payload = jwt.verify(token, 'secret-some-key') as ITokenPayload;
+    payload = jwt.verify(token, JWT_SECRET!) as ITokenPayload;
   } catch (error) {
     return res.status(ERROR_CODES.UNAUTHORIZED).send({ message: 'Необходима авторизация' });
   }

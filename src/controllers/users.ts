@@ -57,7 +57,7 @@ export const createUser = (req: Request, res: Response, next: NextFunction) => {
 
     .catch((error) => {
       if (error.code === 11000) {
-        throw new ConflictError('Пользователь с такой почтой уже существует.');
+        return next(new ConflictError('Пользователь с такой почтой уже существует.'));
       }
       if (error.name === 'ValidationError') {
         return res.status(ERROR_CODES.BAD_REQUEST).send({ message: 'Переданы некорректные данные при создании пользователя.' });
@@ -115,15 +115,18 @@ export const updateAvatarUser = (req: Request, res: Response, next: NextFunction
 
 export const login = ((req: Request, res: Response, next: NextFunction) => {
   const { email, password } = req.body;
+  const { JWT_SECRET } = process.env;
 
   return User.findUserByCredentials(email, password)
     .then((user) => {
-      const token = jwt.sign({ _id: user._id }, 'some-secret-key', { expiresIn: '7d' });
+      const token = jwt.sign({ _id: user._id }, JWT_SECRET!, { expiresIn: '7d' });
 
       res.cookie('jwt', token, {
         maxAge: 3600000,
         httpOnly: true,
       });
+
+      return res.status(200).send({ message: 'Успешный вход' });
     })
     .catch(next);
 });
